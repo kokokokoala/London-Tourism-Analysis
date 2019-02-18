@@ -1,0 +1,406 @@
+---
+title: "london_visits"
+author: "Elvis Leng"
+date: "9/13/2018"
+output: html_document
+---
+```{r}
+
+library(readxl)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(heplots)
+library(reshape)
+library(ggcorrplot)
+library("Hmisc")
+library(tidyverse)
+library(ggthemes)
+
+for (x in excel_sheets('PI_All_data_2007-2017.xlsx')){
+  name <- paste('all', x, sep = '_')
+  assign(name, read_excel('PI_All_data_2007-2017.xlsx',sheet = x))
+}
+
+for (x in excel_sheets('international-visitors-london.xls')){
+  name <- paste('iv', x, sep = '_')
+  assign(name, read_excel('international-visitors-london.xls',sheet = x))
+}
+```
+
+```{r}
+#as year progresses, yearly visits generally goes up with a decrease in 2016. Year spend also goes up as year progresses.
+
+ggplotly(ggplot(`iv_Raw data` %>% group_by(year) %>% summarise(spendAmount = sum(spend),year_visit = sum(visits)), aes(x = year, y = year_visit, size = spendAmount, color = spendAmount))+geom_point()+theme_economist()+ labs(title ='Total Money Spent and Amount of Visitors', x = 'Year', y = 'Total Amount of Visits')+scale_fill_discrete(name="Spending Amount"))
+
+```
+
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% group_by(year) %>% summarise(avg_nights = mean(nights), total_spend = sum(spend)), aes(x = year, y = avg_nights, size = total_spend, color = total_spend))+geom_point()+theme_economist() + labs(title = 'Average Nights Spent and Money Spent', x = 'Year', y = 'Average Nights')+scale_fill_discrete(name="Total Spending"))
+```
+
+
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% group_by(year, quarter) %>% summarise(total_spend = sum(spend)), aes(x = year, y = total_spend,  fill = quarter) )+ geom_bar(stat = "identity", width = 0.8, position=position_dodge())+theme_economist() + labs(title = 'Total Spend by Quarter and Year', x= 'Year', y = 'Total Spend', legend = 'Quarter')+scale_fill_discrete(name="Quarter")+scale_fill_discrete(name="Quarter")) 
+
+```
+As you can see from the above, quarter 3's spend is consisitantly above all the other quarters. 
+
+
+
+
+
+```{r}
+plot_ly(`iv_Raw data` %>% group_by(mode) %>% summarise(total_spend = sum(spend)), labels = ~mode, values = ~total_spend, type = 'pie',textposition = 'inside',textinfo = 'label+percent+value') %>% layout(title = 'Total Spend by Different Transportation Methods', showlegend = T)
+
+
+```
+
+
+As you can see from here, people travel via air spend the most amount of money. 
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% group_by(year, mode) %>% summarise(total_spend = mean(spend)), aes(x = year , y = total_spend,  fill = mode) )+ geom_bar(stat = "identity", width = 0.8, position=position_dodge())+theme_economist()+labs(title ='Average Money Spent By Different Transportation Modes', x= 'Year', y = 'Average Money Spent') +scale_fill_discrete(name="Traffic"))
+```
+
+As you can see, people travel via Tunnel and Air are increasing the money the spent on average, but people travel via sea have a constant spend rate. 
+
+```{r}
+plot_ly(`iv_Raw data` %>% group_by(purpose) %>% summarise(total_spend = round(sum(spend),2)), labels = ~purpose, values = ~total_spend, type = 'pie',textposition = 'inside',textinfo = 'label+percent+value') %>% layout(title = 'Total Spent by Different Travel Purposes', showlegend = T)
+
+```
+As we can see from above, people come here for holiday spend the most amount of money
+
+
+```{r}
+plot_ly(`iv_Raw data` %>% group_by(market) %>% summarise(total_spend = round(sum(spend),2)), labels = ~market, values = ~total_spend, type = 'pie',textposition = 'inside',textinfo = 'label+percent+value') %>%  layout(title = "Country and the Amount of Money Spent",  showlegend = T)
+
+```
+```{r}
+plot_ly(`iv_Raw data` %>% group_by(market) %>% summarise(total_spend = round(mean(spend),2)), labels = ~market, values = ~total_spend, type = 'pie',textposition = 'inside',textinfo = 'label+percent+value') %>%  layout(title = "Country and the Average Amount of Money Spent",  showlegend = T)
+
+```
+
+
+
+```{r}
+ggplotly(ggplot(all_busi_var %>% subset(country =='United States' | country == 'France'| country =='Germany'| country == 'Italy'| country =='Spain'), aes(x = year, y = busi,  fill = country) )+ geom_bar(stat = "identity", width = 0.8, position=position_dodge())+theme_economist() + labs(title = "Top 5 Most Spent Countries Busi Ranking" )+scale_fill_discrete(name="Country")) 
+
+```
+for the top five spending countries, I looked at their economic scale. United states has the highest scale, and they are spending the most amount of money. 
+
+
+show country's spending trend 
+
+
+```{r}
+
+ggplotly(ggplot(`iv_Raw data` %>% subset(market == "Italy") %>% group_by(year) %>% summarise(total_spend = sum(spend)), aes(x = year, y = total_spend) )+geom_point() + geom_smooth(method = "lm")+theme_economist() +labs(title = 'Spending Trend of Italy', x = 'Year', y = 'Total Spend'))
+
+```
+
+
+
+
+
+```{r}
+
+ggplotly(ggplot(`iv_Raw data` %>% subset(market == "Spain") %>% group_by(year) %>% summarise(total_spend = sum(spend)), aes(x = year, y = total_spend) )+geom_point() + geom_smooth(method = "lm")+theme_economist() +labs(title = 'Spending Trend of Spain', x = 'Year', y = 'Total Spend'))
+
+```
+```{r}
+
+ggplotly(ggplot(`iv_Raw data` %>% subset(market == "Kuwait") %>% group_by(year) %>% summarise(total_spend = sum(spend)), aes(x = year, y = total_spend) )+geom_point() + geom_smooth(method = "lm")+theme_economist() +labs(title = 'Spending Trend of Kuwait', x = 'Year', y = 'Total Spend'))
+
+```
+```{r}
+
+ggplotly(ggplot(`iv_Raw data`%>% subset(market == "Saudi Arabia") %>% group_by(year) %>% summarise(total_spend = sum(spend)), aes(x = year, y = total_spend) )+geom_point() + geom_smooth(method = "lm")+theme_economist() +labs(title = 'Spending Trend of Saudi Arabia', x = 'Year', y = 'Total Spend'))
+
+```
+
+
+```{r}
+
+ggplotly(ggplot(`iv_Raw data` %>% subset(market == "Australia") %>% group_by(year) %>% summarise(total_spend = sum(spend)), aes(x = year, y = total_spend) )+geom_point() + geom_smooth(method = "lm")+theme_economist() +labs(title = 'Spending Trend of Australia', x = 'Year', y = 'Total Spend'))
+
+```
+```{r}
+plot_ly(`iv_Raw data` %>% subset(dur_stay== '15+  nights') %>% mutate(count = 1) %>% group_by(market) %>% summarise(total_count = sum(count)), labels = ~market, values = ~total_count, type = 'pie',textposition = 'inside',textinfo = 'label+percent+value') %>% layout(showlegend = T, title = 'Percentage of Countries who Stay Over 15 Days')
+
+```
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+theme_economist() +geom_smooth(method = 'lm') +labs(title = 'General Trend of People Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+
+
+
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'USA') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm')+theme_economist()  +labs(title = 'Trend of People From USA who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+
+```
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'France') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From France who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+
+```
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Australia') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Australia who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'China') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From China who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Kuwait') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Kuwait who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Mexico') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Mexico who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Taiwan') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Taiwan who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+```{r}
+summary(lm(total_count~year, data = `iv_Raw data` %>% subset(market =='Taiwan') %>% mutate( count = 1) %>% group_by(year) %>% summarise(total_count = sum(count))))
+etasq(lm(total_count~year, data = `iv_Raw data` %>% subset(market =='Taiwan') %>% mutate( count = 1) %>% group_by(year) %>% summarise(total_count = sum(count))), anova= TRUE, partial= FALSE)
+```
+
+```{r}
+for (x in excel_sheets('international-visitors-london.xls')){
+  name <- paste('iv', x, sep = '_')
+  assign(name, read_excel('international-visitors-london.xls',sheet = x))
+}
+```
+-----------------------------------------------------
+Duration over 15 days 
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Kuwait') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Kuwait who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Mexico') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Mexico who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Taiwan') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Taiwan who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+summary(lm(total_count~year, data = `iv_Raw data` %>% subset(market =='Taiwan') %>% mutate( count = 1) %>% group_by(year) %>% summarise(total_count = sum(count))))
+etasq(lm(total_count~year, data = `iv_Raw data` %>% subset(market =='Taiwan') %>% mutate( count = 1) %>% group_by(year) %>% summarise(total_count = sum(count))), anova= TRUE, partial= FALSE)
+```
+Below we are only going to focus on the countries that spend more than 15 nights in London
+```{r}
+plot_ly(`iv_Raw data` %>% subset( dur_stay == '15+  nights') %>% group_by(market) %>% summarise(total_spend = round(mean(spend),2)), labels = ~market, values = ~total_spend, type = 'pie',textposition = 'inside',textinfo = 'label+percent+value') %>%  layout(title = "Country and the Average Spending For 15+ Days Duration",  showlegend = T)
+
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Qatar') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Qatar who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Saudi Arabia') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Saudi Arabia who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Australia') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Australia who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Oman') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Oman who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'United Arab Emirates') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From United Arab Emirates who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% subset(dur_stay== '15+  nights' & market == 'Nigeria') %>% mutate(count =1) %>% group_by(year) %>% summarise(total_count = sum(count)), aes(x = year, y = total_count))+geom_point()+geom_smooth(method = 'lm') +theme_economist() +labs(title = 'Trend of People From Nigeria who Stay Over 15+ Days', x = 'Year', y = 'Total Visit'))
+```
+
+```{r}
+eu_nation <- c('Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Irish Republic', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malata', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden')
+```
+
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% mutate(EU = ifelse(market %in%eu_nation, 'EU', 'NON-EU')) %>% group_by(EU,year) %>% summarise(total = sum(visits)), aes(y=total, x = year, color = EU))+geom_point()+geom_line()+theme_economist()+labs(x = 'Year', y = 'Total Visits', title ='EU Total Visits Compare to Non-EU Total Visits'))
+```
+
+
+```{r}
+plot_ly(`iv_Raw data` %>% group_by(dur_stay) %>% summarise(total_visits = sum(visits)), labels = ~dur_stay, values = ~total_visits, type = 'pie',textposition = 'inside',textinfo = 'label+percent+value') %>% layout(title = 'Total Visits by Different Nights', showlegend = T)
+```
+
+```{r}
+ggplotly(ggplot(`iv_Raw data` %>% group_by(year, dur_stay) %>% summarise(total_spend = sum(visits)), aes(x = year, y = total_spend,fill = dur_stay) )+ geom_bar(stat = "identity", width = 0.9, position=position_dodge())+ theme_economist()+scale_fill_discrete(name="Duration Stay")+labs(title = 'Total Visits by Different Duration', x= 'Year', y = 'Total Visits'))
+```
+
+
+Time Series
+```{r}
+
+ivduration15<-`iv_By duration`[,c(1,5,6,10,11,15,16,20,21)]
+colnames(ivduration15)<-c("Year/Nights", "Visits (15+ Nights/Year)","Total Visits",
+                          "Nights (15+ Nights/Year)","Total Nights","Spending (15+ Nights/Year)",
+                          "Total Spending", "Sample Size 15+","Total Sample")
+ivduration15<-ivduration15[-1,]
+
+#convert Column 1 to index
+#as.data.frame(ivduration15)
+#as.data.frame(ivduration15[,-1], row.names = ivduration15[,1])
+#ivduration15 %>% remove_rownames %>% column_to_rownames(var="Year/Nights")
+#ivduration15 <- ivduration15[-1]
+
+#convert column to row names
+ivduration15=as.matrix(ivduration15)
+row.names(ivduration15)=as.numeric(ivduration15[,1])
+ivduration15<-ivduration15[,-1]
+
+#Time Series Plot
+ts.plot(ivduration15,gpars= list(col=rainbow(8)))
+legend("topleft", legend = colnames(ivduration15), col = 2:9, lty = 10)
+
+
+```
+
+
+```{r}
+dur15<-ivduration15[,c(1,3,5)]
+ts.plot(dur15,gpars= list(col=rainbow(3)))
+legend("topleft", legend = colnames(dur15), col = 1:5, lty = 1)
+
+```
+
+```{r}
+#Get a table that contains the countries and the number of visits by year
+countryvis<-`iv_By country`[1:17]
+countryvis<-countryvis[-1,]
+colnames(countryvis)<-c("Country of Origin Visits","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017" )
+countryvisnototal<-countryvis[-c(63),]
+```
+
+
+```{r}
+
+#flip the columns and rows
+
+countryvisnew<-data.frame(t(countryvis))
+colnames(countryvisnew)<-as.character(unlist(countryvisnew[1,]))
+countryvisnew<-countryvisnew[-1,]
+#countryvisnew <- cbind(Row.Names = rownames(countryvisnew), countryvisnew)
+#rownames(countryvisnew) <- NULL
+```
+
+```{r}
+#plot time series data total visits by country
+ts.plot(countryvisnototal,gpars= list(col=rainbow(12)))
+legend("topleft", legend = colnames(ivduration15), col = 2:9, lty = 1)
+      
+```
+
+
+Correlation
+```{r}
+str(`iv_Raw data`)
+
+dfList <- list(all_busi,all_econ, all_educ,all_envi,all_gove,all_heal,all_pers,all_Prosperity,all_safe,all_soci)
+
+newlist<-lapply(dfList, function(df) {
+  #Drop rank columns since rank doesn't provide sufficient info on correlation
+  newdf<-df %>% select(-contains("rank"))
+  #Reshape Data since years of two dataset are not in the same dimension
+  newdf<-newdf %>% as.data.frame %>% melt(., id = c("country","isonum","isocode","region","region2")) 
+  #Remove strings before 4 digit year
+  newdf$variable<-gsub("[a-zA-Z]|_", "", newdf$variable) 
+  return(newdf)
+})
+#assign df names
+busi<-as.data.frame(newlist[1])
+econ<-as.data.frame(newlist[2])
+educ<-as.data.frame(newlist[3])
+envi<-as.data.frame(newlist[4])
+gove<-as.data.frame(newlist[5])
+heal<-as.data.frame(newlist[6])
+pers<-as.data.frame(newlist[7])
+Prosperity<-as.data.frame(newlist[8])
+safe<-as.data.frame(newlist[9])
+soci<-as.data.frame(newlist[10])
+
+#Change columns to classify for further merge steps
+colnames(busi)[which(names(busi) == "value")] <- "busi"
+colnames(econ)[which(names(econ) == "value")] <- "econ"
+colnames(educ)[which(names(educ) == "value")] <- "educ"
+colnames(envi)[which(names(envi) == "value")] <- "envi"
+colnames(gove)[which(names(gove) == "value")] <- "gove"
+colnames(heal)[which(names(heal) == "value")] <- "heal"
+colnames(pers)[which(names(pers) == "value")] <- "pers"
+colnames(Prosperity)[which(names(Prosperity) == "value")] <- "Prosperity"
+colnames(safe)[which(names(safe) == "value")] <- "safe"
+colnames(soci)[which(names(soci) == "value")] <- "soci"
+
+merge1<-merge(x = `iv_Raw data`, y = busi, by.x = c("market","year"), by.y = c("country","variable"))
+merge2<-merge(merge1, econ, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+#CHECK 
+#merge2[which(merge2$isonum == "32"), ]
+merge3<-merge(merge2, educ, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+merge4<-merge(merge3, envi, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+merge5<-merge(merge4, gove, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+merge6<-merge(merge5, heal, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+merge7<-merge(merge6, pers, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+merge8<-merge(merge7, Prosperity, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+merge9<-merge(merge8, safe, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+merge10<-merge(merge9, soci, by.x = c("market","isonum","isocode","region","region2","year"), by.y = c("country","isonum","isocode","region","region2","variable"))
+str(merge10)
+df<- merge10[, !(colnames(merge10) %in% c("market", "isonum","isocode","region","region2","quarter","dur_stay","mode","purpose","area"))]
+#df$year<-as.numeric(df$year)
+str(df)
+corr<-cor(df)
+corr
+#plot the correlation matrix visual
+#You can see a moderate to strong correlation between prosperity and gove/education/econ/busi
+ggcorrplot(corr,lab = TRUE)
+corr2<-as.matrix(df)
+corr3<-rcorr(corr2, type = c("pearson","spearman"))
+str(corr3)
+#r : the correlation matrix
+#n : the matrix of the number of observations used in analyzing each pair of variables
+#P : the p-values corresponding to the significance levels of correlations.
+# p-values
+a<-corr3$P
+a
+```
+
+```{r}
+quarterlm1<-lm(`iv_By quarter`$`Total Visits (000s)`~`iv_By quarter`$Year + `iv_By quarter`$Quarter + `iv_By quarter`$`Total Nights (000s)` + `iv_By quarter`$`Total Spend (£m)` + `iv_By quarter`$`Sample size`)
+summary(quarterlm1)
+```
+
+```{r}
+vif(quarterlm1)
+plot(quarterlm1)
+```
+
+```{r}
+quarterlm2<-lm(`iv_By quarter`$`Total Visits (000s)`~ `iv_By quarter`$Quarter + `iv_By quarter`$`Total Nights (000s)` + `iv_By quarter`$`Total Spend (£m)` + `iv_By quarter`$`Sample size`)
+summary(quarterlm2)
+```
+```{r}
+vif(quarterlm2)
+plot(quarterlm2)
+```
+
+```{r}
+quarterlm3<-lm(`iv_By quarter`$`Total Visits (000s)`~ `iv_By quarter`$Quarter + `iv_By quarter`$`Total Spend (£m)` + `iv_By quarter`$`Sample size`)
+summary(quarterlm3)
+```
+```{r}
+vif(quarterlm3)
+plot(quarterlm3)
+```
+
+
+
